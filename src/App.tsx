@@ -1,67 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const App: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>([
+    { role: 'ai', text: 'سلاڤ! ئەز زیرەکیا دەستکرد یا BLACK KURD م. ئەز دشێم ب بادینی هاریکاریا تە بکەم.' }
+  ]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+  // ل ڤێرێ پێدڤییە API Key یا خۆ دانی
+  const API_KEY = "ل_ڤێرێ_کۆدا_خۆ_دانە"; 
+
+  const handleChat = async () => {
+    if (!input.trim()) return;
+
+    const userMsg = { role: 'user', text: input };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `بەرسڤێ ب زاراڤێ بادینی بدە: ${input}` }] }]
+        })
+      });
+
+      const data = await response.json();
+      const aiText = data.candidates[0].content.parts[0].text;
+      
+      setMessages((prev) => [...prev, { role: 'ai', text: aiText }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { role: 'ai', text: 'ببورە، کێشەیەک د سێرڤەری دا هەبوو.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={styles.body}>
-      <div style={styles.mesh}></div>
-      <div style={{...styles.container, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(20px)'}}>
-        <div style={styles.glassCard}>
-          <div style={styles.header}>
-            <div style={styles.dot}></div>
-            <span style={styles.brandName}>BLACK KURDISH</span>
+    <div style={styles.container}>
+      <div style={styles.header}>BLACK KURD AI 🤖</div>
+      
+      <div style={styles.chatWindow}>
+        {messages.map((m, i) => (
+          <div key={i} style={m.role === 'user' ? styles.userBubble : styles.aiBubble}>
+            {m.text}
           </div>
-          <h1 style={styles.title}>
-            پاشەڕۆژا <span style={styles.blueText}>تەکنەلۆژیا</span> کوردی
-          </h1>
-          <p style={styles.description}>
-            ئاڤاکرنا پڕۆژێن داهێنانەر د بیاڤێ زیرەکیا دەستکرد و وێبێ دا ب زاراڤێ بادینی.
-          </p>
-          <div style={styles.buttonContainer}>
-            <button style={styles.mainBtn}>دەستپێبکە</button>
-            <button style={styles.outlineBtn}>پڕۆژە</button>
-          </div>
-          <div style={styles.stats}>
-            <div style={styles.statItem}>
-              <span style={styles.statNum}>+١٠</span>
-              <span style={styles.statLabel}>پڕۆژە</span>
-            </div>
-            <div style={styles.line}></div>
-            <div style={styles.statItem}>
-              <span style={styles.statNum}>٢٤/٧</span>
-              <span style={styles.statLabel}>سەرهێڵ</span>
-            </div>
-          </div>
-        </div>
+        ))}
+        {loading && <div style={styles.loading}>چاوەڕێ بە...</div>}
+      </div>
+
+      <div style={styles.inputArea}>
+        <input 
+          style={styles.input} 
+          value={input} 
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleChat()}
+          placeholder="تشتەکێ بنڤیسە..."
+        />
+        <button style={styles.button} onClick={handleChat} disabled={loading}>
+          {loading ? '...' : 'ناردن'}
+        </button>
       </div>
     </div>
   );
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-  body: { backgroundColor: '#020202', height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'sans-serif', direction: 'rtl', overflow: 'hidden', position: 'relative' },
-  mesh: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundImage: 'radial-gradient(at 0% 0%, rgba(61, 133, 198, 0.15) 0, transparent 50%), radial-gradient(at 100% 100%, rgba(142, 68, 173, 0.1) 0, transparent 50%)', zIndex: 0 },
-  container: { zIndex: 1, padding: '20px', transition: 'all 1s ease' },
-  glassCard: { background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '30px', padding: '40px', maxWidth: '450px', textAlign: 'center' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '25px' },
-  dot: { width: '10px', height: '10px', backgroundColor: '#3d85c6', borderRadius: '50%', boxShadow: '0 0 10px #3d85c6' },
-  brandName: { fontSize: '12px', fontWeight: 'bold', color: '#888', letterSpacing: '2px' },
-  title: { fontSize: '32px', fontWeight: '900', marginBottom: '20px' },
-  blueText: { color: '#3d85c6' },
-  description: { color: '#aaa', fontSize: '15px', marginBottom: '35px' },
-  buttonContainer: { display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '40px' },
-  mainBtn: { padding: '12px 25px', borderRadius: '10px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: 'bold', cursor: 'pointer' },
-  outlineBtn: { padding: '12px 25px', borderRadius: '10px', border: '1px solid #333', backgroundColor: 'transparent', color: '#fff', cursor: 'pointer' },
-  stats: { display: 'flex', justifyContent: 'center', gap: '30px', borderTop: '1px solid #222', paddingTop: '25px' },
-  statItem: { display: 'flex', flexDirection: 'column' },
-  statNum: { fontSize: '18px', fontWeight: 'bold' },
-  statLabel: { fontSize: '11px', color: '#555' },
-  line: { width: '1px', height: '25px', backgroundColor: '#222' }
+  container: { backgroundColor: '#050505', height: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', direction: 'rtl', fontFamily: 'sans-serif' },
+  header: { padding: '20px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', borderBottom: '1px solid #222' },
+  chatWindow: { flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' },
+  userBubble: { alignSelf: 'flex-start', backgroundColor: '#3d85c6', padding: '12px', borderRadius: '15px 15px 0 15px', maxWidth: '80%' },
+  aiBubble: { alignSelf: 'flex-end', backgroundColor: '#222', padding: '12px', borderRadius: '15px 15px 15px 0', maxWidth: '80%', border: '1px solid #333' },
+  inputArea: { padding: '20px', display: 'flex', gap: '10px', borderTop: '1px solid #222' },
+  input: { flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #333', backgroundColor: '#111', color: '#fff', outline: 'none' },
+  button: { padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: 'bold', cursor: 'pointer' },
+  loading: { textAlign: 'center', fontSize: '12px', color: '#888' }
 };
 
 export default App;
