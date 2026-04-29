@@ -14,7 +14,7 @@ const App: React.FC = () => {
         <div style={styles.glassCard}>
           <div style={styles.header}>
             <div style={styles.dot}></div>
-            <span style={styles.brandName}>BLACK KURD</span>
+            <span style={styles.brandName}>BLACK KURDISH</span>
           </div>
           <h1 style={styles.title}>
             پاشەڕۆژا <span style={styles.blueText}>تەکنەلۆژیا</span> کوردی
