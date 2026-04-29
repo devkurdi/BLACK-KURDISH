@@ -8,7 +8,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // ل ڤێرێ پێدڤییە API Key یا خۆ دانی
-  const API_KEY = "ل_ڤێرێ_کۆدا_خۆ_دانە"; 
+  const API_KEY = "AIzaSyCLJ3po7oBk1BjJSu9sWTK-vTtF26Q1ut8"; 
 
   const handleChat = async () => {
     if (!input.trim()) return;
