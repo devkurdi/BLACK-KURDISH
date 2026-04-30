@@ -1,82 +1,165 @@
 import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  TouchableOpacity, 
+  FlatList, 
+  KeyboardAvoidingView, 
+  Platform 
+} from 'react-native';
 
-const App: React.FC = () => {
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<{ role: string; text: string }[]>([
-    { role: 'ai', text: 'سلاڤ! ئەز زیرەکیا دەستکرد یا BLACK KURD م. ئەز دشێم ب بادینی هاریکاریا تە بکەم.' }
+// پێناسا جۆرێ نامێ
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+}
+
+export default function App() {
+  const [messages, setMessages] = useState<Message[]>([
+    { id: '1', text: 'سلاڤ! ئەز دشێم چەوا هاریکاریا تە بکەم؟', sender: 'ai' }
   ]);
-  const [loading, setLoading] = useState(false);
+  const [inputText, setInputText] = useState('');
 
-  // ل ڤێرێ پێدڤییە API Key یا خۆ دانی
-  const API_KEY = "AIzaSyCLJ3po7oBk1BjJSu9sWTK-vTtF26Q1ut8"; 
+  const sendMessage = () => {
+    if (inputText.trim() === '') return;
 
-  const handleChat = async () => {
-    if (!input.trim()) return;
+    const newUserMsg: Message = {
+      id: Date.now().toString(),
+      text: inputText,
+      sender: 'user',
+    };
 
-    const userMsg = { role: 'user', text: input };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput('');
-    setLoading(true);
+    setMessages([...messages, newUserMsg]);
+    setInputText('');
 
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `بەرسڤێ ب زاراڤێ بادینی بدە: ${input}` }] }]
-        })
-      });
-
-      const data = await response.json();
-      const aiText = data.candidates[0].content.parts[0].text;
-      
-      setMessages((prev) => [...prev, { role: 'ai', text: aiText }]);
-    } catch (error) {
-      setMessages((prev) => [...prev, { role: 'ai', text: 'ببورە، کێشەیەک د سێرڤەری دا هەبوو.' }]);
-    } finally {
-      setLoading(false);
-    }
+    // لێرە تو دشێی ب رێکا API بەرسڤا AI وەربگری
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'ئەز ل سەر ڤێ چەندێ کار دکەم...',
+        sender: 'ai',
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    }, 1000);
   };
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.header}>BLACK KURD AI 🤖</div>
-      
-      <div style={styles.chatWindow}>
-        {messages.map((m, i) => (
-          <div key={i} style={m.role === 'user' ? styles.userBubble : styles.aiBubble}>
-            {m.text}
-          </div>
-        ))}
-        {loading && <div style={styles.loading}>چاوەڕێ بە...</div>}
-      </div>
-
-      <div style={styles.inputArea}>
-        <input 
-          style={styles.input} 
-          value={input} 
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleChat()}
-          placeholder="تشتەکێ بنڤیسە..."
-        />
-        <button style={styles.button} onClick={handleChat} disabled={loading}>
-          {loading ? '...' : 'ناردن'}
-        </button>
-      </div>
-    </div>
+  const renderItem = ({ item }: { item: Message }) => (
+    <View style={[
+      styles.messageBubble, 
+      item.sender === 'user' ? styles.userBubble : styles.aiBubble
+    ]}>
+      <Text style={styles.messageText}>{item.text}</Text>
+    </View>
   );
-};
 
-const styles: { [key: string]: React.CSSProperties } = {
-  container: { backgroundColor: '#050505', height: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', direction: 'rtl', fontFamily: 'sans-serif' },
-  header: { padding: '20px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', borderBottom: '1px solid #222' },
-  chatWindow: { flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' },
-  userBubble: { alignSelf: 'flex-start', backgroundColor: '#3d85c6', padding: '12px', borderRadius: '15px 15px 0 15px', maxWidth: '80%' },
-  aiBubble: { alignSelf: 'flex-end', backgroundColor: '#222', padding: '12px', borderRadius: '15px 15px 15px 0', maxWidth: '80%', border: '1px solid #333' },
-  inputArea: { padding: '20px', display: 'flex', gap: '10px', borderTop: '1px solid #222' },
-  input: { flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #333', backgroundColor: '#111', color: '#fff', outline: 'none' },
-  button: { padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#fff', color: '#000', fontWeight: 'bold', cursor: 'pointer' },
-  loading: { textAlign: 'center', fontSize: '12px', color: '#888' }
-};
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>AI CHAT</Text>
+      </View>
 
-export default App;
+      {/* Chat Messages */}
+      <FlatList
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.chatList}
+      />
+
+      {/* Input Area */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={90}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="نامەکێ بنڤێسە..."
+            placeholderTextColor="#888"
+            value={inputText}
+            onChangeText={setInputText}
+          />
+          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <Text style={styles.sendButtonText}>ناردن</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f0f0f', // پاشبنەمایێ ڕەشێ تاریک
+  },
+  header: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  headerTitle: {
+    color: '#00d4ff', // شینێ نیۆن
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  chatList: {
+    padding: 15,
+  },
+  messageBubble: {
+    padding: 12,
+    borderRadius: 15,
+    marginVertical: 5,
+    maxWidth: '80%',
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#00d4ff',
+  },
+  aiBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#262626',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  messageText: {
+    color: '#fff',
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'right',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#262626',
+    color: '#fff',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    height: 45,
+    marginRight: 10,
+    textAlign: 'right',
+  },
+  sendButton: {
+    backgroundColor: '#00d4ff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  sendButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+  },
+});
